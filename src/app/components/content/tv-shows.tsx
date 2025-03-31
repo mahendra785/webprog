@@ -81,7 +81,7 @@ const TV_SHOWS_DATA = [
 
 interface TVShowsSectionProps {
   isAuthenticated: boolean;
-  navigateTo: (view: string, params?: any) => void;
+  navigateTo: (view: string, params?: { id: number; type: string }) => void;
 }
 
 export default function TVShowsSection({
@@ -111,7 +111,7 @@ export default function TVShowsSection({
 
   const handleCardClick = (id: number) => {
     if (isAuthenticated) {
-      navigateTo("watch", { id, type: "tvshow" });
+      window.location.href = `/party/${id}`;
     } else {
       navigateTo("login");
     }

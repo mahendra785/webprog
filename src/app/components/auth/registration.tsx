@@ -49,7 +49,7 @@ export default function RegistrationSection({
 
       showToast("Success", "Your account has been created", "success");
     } catch (error) {
-      showToast("Error", "Failed to create account", "error");
+      showToast("Error", "Failed to create account", error);
     } finally {
       setIsLoading(false);
     }

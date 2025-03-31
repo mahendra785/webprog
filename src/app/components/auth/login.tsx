@@ -43,7 +43,7 @@ export default function LoginSection({
 
       showToast("Success", "You have successfully logged in", "success");
     } catch (error) {
-      showToast("Error", "Invalid email or password", "error");
+      showToast("Error", "Invalid email or password", error);
     } finally {
       setIsLoading(false);
     }

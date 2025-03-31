@@ -81,7 +81,7 @@ const MOVIES_DATA = [
 
 interface MoviesSectionProps {
   isAuthenticated: boolean;
-  navigateTo: (view: string, params?: any) => void;
+  navigateTo: (view: string, params?: { id: number; type: string }) => void;
 }
 
 export default function MoviesSection({

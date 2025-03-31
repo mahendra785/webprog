@@ -1,320 +1,468 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { X, Users, Copy } from "lucide-react";
+import { io } from "socket.io-client";
 
-// Sample data for movies and TV shows
-const MEDIA_DATA = {
-  movie: {
-    1: {
-      title: "Cosmic Adventure",
-      description:
-        "A journey through space and time that challenges our understanding of the universe.",
-      duration: "2h 15m",
-      year: 2023,
-      rating: "PG-13",
-    },
-    2: {
-      title: "Midnight Memories",
-      description:
-        "A nostalgic look at the power of friendship and the memories that bind us together.",
-      duration: "1h 58m",
-      year: 2022,
-      rating: "PG",
-    },
-    // Add more movies as needed
-  },
-  tvshow: {
-    1: {
-      title: "Stranger Things",
-      description:
-        "When a young boy vanishes, a small town uncovers a mystery involving secret experiments, terrifying supernatural forces, and one strange little girl.",
-      season: 4,
-      episodes: 9,
-      year: 2022,
-      rating: "TV-14",
-    },
-    2: {
-      title: "Breaking Bad",
-      description:
-        "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family's future.",
-      season: 5,
-      episodes: 16,
-      year: 2013,
-      rating: "TV-MA",
-    },
-    // Add more TV shows as needed
-  },
-};
+// Create a socket instance
+export const socket = io(
+  process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001",
+  {
+    autoConnect: true,
+    reconnectionAttempts: 5,
+    reconnectionDelay: 1000,
+  }
+);
 
-interface WatchSectionProps {
-  mediaId?: number;
-  mediaType?: string;
-  isAuthenticated: boolean;
-  navigateTo: (view: string, params?: any) => void;
-  showToast: (
-    title: string,
-    message: string,
-    type: "success" | "error" | "info"
-  ) => void;
+// Party Watch Modal Component
+interface PartyWatchModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onCreateParty: () => void;
+  onJoinParty: (partyId: string) => void;
+  partyId: string | null;
+  partyMembers: string[];
+  isHost: boolean;
 }
 
-export default function WatchSection({
-  mediaId,
-  mediaType,
-  isAuthenticated,
-  navigateTo,
-  showToast,
-}: WatchSectionProps) {
-  const [mediaData, setMediaData] = useState<any>(null);
-  const [isLiked, setIsLiked] = useState(false);
-  const [isInWatchlist, setIsInWatchlist] = useState(false);
+export function PartyWatchModal({
+  isOpen,
+  onClose,
+  onCreateParty,
+  onJoinParty,
+  partyId,
+  partyMembers,
+  isHost,
+}: PartyWatchModalProps) {
+  const [joinPartyId, setJoinPartyId] = useState("");
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (
-      mediaId &&
-      mediaType &&
-      (mediaType === "movie" || mediaType === "tvshow")
-    ) {
-      // Get media data
-      const data =
-        MEDIA_DATA[mediaType as keyof typeof MEDIA_DATA][
-          mediaId as keyof (typeof MEDIA_DATA)["movie" | "tvshow"]
-        ];
-      if (data) {
-        setMediaData(data);
-      } else {
-        // Redirect to home if invalid parameters
-        navigateTo("home");
-      }
-    } else {
-      // Redirect to home if invalid parameters
-      navigateTo("home");
+    if (!isOpen) {
+      setJoinPartyId("");
+      setCopied(false);
     }
-  }, [mediaId, mediaType, navigateTo]);
+  }, [isOpen]);
 
-  const handleLike = () => {
-    if (!isAuthenticated) {
-      navigateTo("login");
-      return;
+  const handleCopyLink = () => {
+    if (partyId) {
+      navigator.clipboard.writeText(
+        `${window.location.origin}?party=${partyId}`
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
-
-    setIsLiked(!isLiked);
-
-    showToast(
-      isLiked ? "Removed from Liked" : "Added to Liked",
-      isLiked
-        ? "This title has been removed from your liked list."
-        : "This title has been added to your liked list.",
-      "success"
-    );
   };
 
-  const handleAddToWatchlist = () => {
-    if (!isAuthenticated) {
-      navigateTo("login");
-      return;
-    }
-
-    setIsInWatchlist(!isInWatchlist);
-
-    showToast(
-      isInWatchlist ? "Removed from Watchlist" : "Added to Watchlist",
-      isInWatchlist
-        ? "This title has been removed from your watchlist."
-        : "This title has been added to your watchlist.",
-      "success"
-    );
-  };
-
-  const handleShare = () => {
-    // In a real app, this would open a share dialog
-    showToast(
-      "Share Link Copied",
-      "The link has been copied to your clipboard.",
-      "success"
-    );
-  };
-
-  const handleGoBack = () => {
-    navigateTo(mediaType === "movie" ? "movies" : "tvshows");
-  };
-
-  if (!mediaData) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+      <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md relative">
         <button
-          className="mb-4 text-white hover:text-red-500 transition-colors flex items-center"
-          onClick={handleGoBack}
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-white"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 mr-2"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z"
-              clipRule="evenodd"
-            />
-          </svg>
-          Back
+          <X className="w-5 h-5" />
         </button>
 
-        <div className="bg-gray-900 rounded-lg overflow-hidden shadow-xl">
-          <div className="aspect-video bg-black relative">
-            <video
-              controls
-              className="w-full h-full object-contain"
-              poster="/placeholder.svg?height=720&width=1280"
-            >
-              <source src="#" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </div>
+        <h2 className="text-xl font-bold text-white mb-4 flex items-center">
+          <Users className="mr-2" /> Party Watch
+        </h2>
 
-          <div className="p-6">
-            <h1 className="text-2xl md:text-3xl font-bold mb-2">
-              {mediaData.title}
-            </h1>
-
-            <div className="flex flex-wrap gap-2 mb-4">
-              {mediaType === "movie" ? (
-                <>
-                  <span className="px-2 py-1 bg-gray-800 rounded text-sm">
-                    {mediaData.year}
-                  </span>
-                  <span className="px-2 py-1 bg-gray-800 rounded text-sm">
-                    {mediaData.rating}
-                  </span>
-                  <span className="px-2 py-1 bg-gray-800 rounded text-sm">
-                    {mediaData.duration}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="px-2 py-1 bg-gray-800 rounded text-sm">
-                    Season {mediaData.season}
-                  </span>
-                  <span className="px-2 py-1 bg-gray-800 rounded text-sm">
-                    {mediaData.episodes} Episodes
-                  </span>
-                  <span className="px-2 py-1 bg-gray-800 rounded text-sm">
-                    {mediaData.rating}
-                  </span>
-                </>
-              )}
-            </div>
-
-            <p className="text-gray-300 mb-6">{mediaData.description}</p>
-
-            <div className="flex flex-wrap gap-4">
+        {!partyId ? (
+          <>
+            <div className="space-y-4">
               <button
-                className={`px-4 py-2 rounded-md flex items-center ${
-                  isLiked
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "border border-gray-600 hover:bg-gray-800"
-                } transition-colors`}
-                onClick={handleLike}
+                onClick={onCreateParty}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className={`h-5 w-5 mr-2 ${isLiked ? "fill-current" : ""}`}
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
-                {isLiked ? "Liked" : "Like"}
+                Create a Party
               </button>
 
-              <button
-                className={`px-4 py-2 rounded-md flex items-center ${
-                  isInWatchlist
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "border border-gray-600 hover:bg-gray-800"
-                } transition-colors`}
-                onClick={handleAddToWatchlist}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
-                {isInWatchlist ? "In Watchlist" : "Add to Watchlist"}
-              </button>
-
-              <button
-                className="px-4 py-2 border border-gray-600 rounded-md hover:bg-gray-800 transition-colors flex items-center"
-                onClick={handleShare}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-2"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                  />
-                </svg>
-                Share
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Related Content */}
-        <div className="mt-12">
-          <h2 className="text-xl font-bold mb-6">More Like This</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <div
-                key={index}
-                className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300"
-              >
-                <img
-                  src={`/placeholder.svg?height=300&width=200&text=Related ${
-                    index + 1
-                  }`}
-                  alt={`Related content ${index + 1}`}
-                  className="w-full aspect-[2/3] object-cover"
-                />
-                <div className="p-2">
-                  <h3 className="font-medium text-sm truncate">
-                    Related Title {index + 1}
-                  </h3>
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-700"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-gray-900 text-gray-400">
+                    or join existing
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={joinPartyId}
+                  onChange={(e) => setJoinPartyId(e.target.value)}
+                  placeholder="Enter party ID"
+                  className="flex-1 bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                />
+                <button
+                  onClick={() => joinPartyId && onJoinParty(joinPartyId)}
+                  disabled={!joinPartyId}
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white py-2 px-4 rounded-md transition-colors"
+                >
+                  Join
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mb-4 p-3 bg-gray-800 rounded-md">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-400 text-sm">Party ID:</span>
+                <button
+                  onClick={handleCopyLink}
+                  className="text-red-500 hover:text-red-400 text-sm flex items-center"
+                >
+                  {copied ? "Copied!" : "Copy Link"}
+                  {!copied && <Copy className="ml-1 w-3 h-3" />}
+                </button>
+              </div>
+              <div className="font-mono text-white bg-gray-900 p-2 rounded text-sm break-all">
+                {partyId}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-gray-400 text-sm mb-2 flex items-center">
+                <Users className="mr-1 w-4 h-4" /> Party Members (
+                {partyMembers.length})
+              </h3>
+              <ul className="bg-gray-800 rounded-md divide-y divide-gray-700">
+                {partyMembers.map((member, index) => (
+                  <li key={index} className="py-2 px-3 flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-white">
+                      {member} {isHost && index === 0 ? "(Host)" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="mt-4 text-sm text-gray-400">
+              <p>
+                {isHost
+                  ? "You're the host. Everyone in the party will follow your playback."
+                  : "The host controls playback for everyone in the party."}
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Party Watch Component with Socket Logic
+export function PartyWatch() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [partyId, setPartyId] = useState<string | null>(null);
+  const [partyMembers, setPartyMembers] = useState<string[]>([]);
+  const [isHost, setIsHost] = useState(false);
+  const [isConnected, setIsConnected] = useState(socket.connected);
+
+  useEffect(() => {
+    // Check URL for party ID on initial load
+    const params = new URLSearchParams(window.location.search);
+    const urlPartyId = params.get("party");
+    if (urlPartyId) {
+      setIsModalOpen(true);
+      joinParty(urlPartyId);
+    }
+
+    function onConnect() {
+      setIsConnected(true);
+    }
+
+    function onDisconnect() {
+      setIsConnected(false);
+      // Reset party state on disconnect
+      setPartyId(null);
+      setPartyMembers([]);
+      setIsHost(false);
+    }
+
+    function onPartyCreated(data: { partyId: string; username: string }) {
+      setPartyId(data.partyId);
+      setPartyMembers([data.username]);
+      setIsHost(true);
+
+      // Update URL with party ID
+      const url = new URL(window.location.href);
+      url.searchParams.set("party", data.partyId);
+      window.history.pushState({}, "", url);
+    }
+
+    function onPartyJoined(data: {
+      partyId: string;
+      members: string[];
+      isHost: boolean;
+    }) {
+      setPartyId(data.partyId);
+      setPartyMembers(data.members);
+      setIsHost(data.isHost);
+
+      // Update URL with party ID
+      const url = new URL(window.location.href);
+      url.searchParams.set("party", data.partyId);
+      window.history.pushState({}, "", url);
+    }
+
+    function onPartyMembers(members: string[]) {
+      setPartyMembers(members);
+    }
+
+    function onPartyError(error: string) {
+      console.error("Party error:", error);
+      // You could add toast notifications here
+    }
+
+    // Set up socket event listeners
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+    socket.on("party:created", onPartyCreated);
+    socket.on("party:joined", onPartyJoined);
+    socket.on("party:members", onPartyMembers);
+    socket.on("party:error", onPartyError);
+
+    return () => {
+      // Clean up event listeners
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.off("party:created", onPartyCreated);
+      socket.off("party:joined", onPartyJoined);
+      socket.off("party:members", onPartyMembers);
+      socket.off("party:error", onPartyError);
+    };
+  }, []);
+
+  // Handle creating a new party
+  const createParty = () => {
+    socket.connect();
+
+    // Generate a random username for demo purposes
+    // In a real app, you'd likely have user authentication
+    const username = `User_${Math.floor(Math.random() * 10000)}`;
+    console.log("Creating party with username:", username);
+    socket.emit("party:create", { username });
+  };
+
+  // Handle joining an existing party
+  const joinParty = (partyId: string) => {
+    if (!isConnected) {
+      socket.connect();
+    }
+
+    // Generate a random username for demo purposes
+    const username = `User_${Math.floor(Math.random() * 10000)}`;
+
+    socket.emit("party:join", { partyId, username });
+  };
+
+  // Handle closing the modal and leaving the party
+  const closeModal = () => {
+    if (partyId) {
+      socket.emit("party:leave");
+
+      // Remove party ID from URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("party");
+      window.history.pushState({}, "", url);
+
+      setPartyId(null);
+      setPartyMembers([]);
+      setIsHost(false);
+    }
+
+    setIsModalOpen(false);
+  };
+
+  // Function to open the modal
+  const openPartyModal = () => {
+    setIsModalOpen(true);
+  };
+
+  return (
+    <>
+      {/* Button to open the modal */}
+      <button
+        onClick={openPartyModal}
+        className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors flex items-center"
+      >
+        Watch with Friends
+      </button>
+
+      {/* Party Watch Modal */}
+      <PartyWatchModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onCreateParty={createParty}
+        onJoinParty={joinParty}
+        partyId={partyId}
+        partyMembers={partyMembers}
+        isHost={isHost}
+      />
+    </>
+  );
+}
+
+// Video Player with Party Watch Integration
+interface VideoPlayerWithPartyProps {
+  videoUrl: string;
+}
+
+export function VideoPlayerWithParty({ videoUrl }: VideoPlayerWithPartyProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [partyId, setPartyId] = useState<string | null>(null);
+  const [isHost, setIsHost] = useState(false);
+
+  useEffect(() => {
+    function onPartyJoined(data: { partyId: string; isHost: boolean }) {
+      setPartyId(data.partyId);
+      setIsHost(data.isHost);
+    }
+
+    function onPartyLeft() {
+      setPartyId(null);
+      setIsHost(false);
+    }
+
+    function onPlaybackSync(data: { isPlaying: boolean; currentTime: number }) {
+      const video = videoRef.current;
+      if (!video || isHost) return;
+
+      // Update video state based on host's playback
+      video.currentTime = data.currentTime;
+
+      if (data.isPlaying && video.paused) {
+        video.play().catch((err) => console.error("Error playing video:", err));
+      } else if (!data.isPlaying && !video.paused) {
+        video.pause();
+      }
+    }
+
+    // Set up socket event listeners
+    socket.on("party:joined", onPartyJoined);
+    socket.on("party:left", onPartyLeft);
+    socket.on("playback:sync", onPlaybackSync);
+
+    return () => {
+      // Clean up event listeners
+      socket.off("party:joined", onPartyJoined);
+      socket.off("party:left", onPartyLeft);
+      socket.off("playback:sync", onPlaybackSync);
+    };
+  }, [isHost]);
+
+  // Sync playback when host controls change
+  useEffect(() => {
+    if (!partyId || !isHost) return;
+
+    const syncPlayback = () => {
+      const video = videoRef.current;
+      if (!video) return;
+
+      socket.emit("playback:update", {
+        isPlaying: !video.paused,
+        currentTime: video.currentTime,
+      });
+    };
+
+    // Set up video event listeners for host
+    const video = videoRef.current;
+    if (video) {
+      video.addEventListener("play", syncPlayback);
+      video.addEventListener("pause", syncPlayback);
+      video.addEventListener("seeked", syncPlayback);
+
+      // Sync every 5 seconds during playback
+      const interval = setInterval(() => {
+        if (!video.paused) {
+          syncPlayback();
+        }
+      }, 5000);
+
+      return () => {
+        video.removeEventListener("play", syncPlayback);
+        video.removeEventListener("pause", syncPlayback);
+        video.removeEventListener("seeked", syncPlayback);
+        clearInterval(interval);
+      };
+    }
+  }, [partyId, isHost]);
+
+  return (
+    <div className="relative">
+      <video
+        ref={videoRef}
+        src={videoUrl}
+        className="w-full rounded-lg"
+        controls
+      />
+
+      <div className="absolute top-4 right-4 z-10">
+        <PartyWatch />
+      </div>
+
+      {partyId && !isHost && (
+        <div className="absolute bottom-4 left-4 bg-black/70 text-white px-3 py-1 rounded-md text-sm">
+          Party Mode: Host controls playback
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Example usage component
+export default function PartyWatchExample() {
+  // Connection status display
+  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [transport, setTransport] = useState("N/A");
+
+  useEffect(() => {
+    if (socket.connected) {
+      onConnect();
+    }
+
+    function onConnect() {
+      setIsConnected(true);
+      setTransport(socket.io.engine.transport.name);
+
+      socket.io.engine.on("upgrade", (transport) => {
+        setTransport(transport.name);
+      });
+    }
+
+    function onDisconnect() {
+      setIsConnected(false);
+      setTransport("N/A");
+    }
+
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    return () => {
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+    };
+  }, []);
+
+  return (
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Party Watch Demo</h1>
+
+      <div className="max-w-4xl mx-auto">
+        <VideoPlayerWithParty videoUrl="https://www.youtube.com/watch?v=3-ELBiUkUWc&t=4116s" />
+
+        <div className="mt-4 p-4 bg-gray-800 rounded-lg text-white">
+          <h2 className="text-xl font-semibold mb-2">Connection Status</h2>
+          <p>Status: {isConnected ? "connected" : "disconnected"}</p>
+          <p>Transport: {transport}</p>
         </div>
       </div>
     </div>

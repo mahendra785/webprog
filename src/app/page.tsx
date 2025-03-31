@@ -8,7 +8,6 @@ import RegistrationSection from "./components/auth/registration";
 import MoviesSection from "./components/content/movies";
 import TVShowsSection from "./components/content/tv-shows";
 import ProfileSection from "./components/profile";
-import WatchSection from "./components/content/watch";
 import { ToastContainer, Toast } from "./components/ui/toast";
 
 // Types
@@ -18,8 +17,8 @@ export type User = {
 };
 
 export type ViewParams = {
-  id?: number;
-  type?: string;
+  id: number;
+  type: string;
 };
 
 export type ToastType = {
@@ -37,7 +36,6 @@ export default function App() {
 
   // Navigation state
   const [currentView, setCurrentView] = useState("home");
-  const [viewParams, setViewParams] = useState<ViewParams>({});
 
   // Toast notifications
   const [toasts, setToasts] = useState<ToastType[]>([]);
@@ -60,9 +58,8 @@ export default function App() {
   };
 
   // Navigation function
-  const navigateTo = (view: string, params: ViewParams = {}) => {
+  const navigateTo = (view: string) => {
     setCurrentView(view);
-    setViewParams(params);
     window.scrollTo(0, 0);
   };
 
@@ -124,16 +121,6 @@ export default function App() {
             user={user}
             logout={logout}
             updateUser={updateUser}
-            navigateTo={navigateTo}
-            showToast={showToast}
-          />
-        );
-      case "watch":
-        return (
-          <WatchSection
-            mediaId={viewParams.id}
-            mediaType={viewParams.type}
-            isAuthenticated={isAuthenticated}
             navigateTo={navigateTo}
             showToast={showToast}
           />
