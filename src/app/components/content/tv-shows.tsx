@@ -108,6 +108,10 @@ export default function TVShowsSection({
 
     setFilteredShows(result);
   }, [searchTerm, selectedGenre]);
+  if (typeof window !== "undefined") {
+    // Safe to use `window` here
+    console.log(window.innerWidth); // or other window-dependent code
+  }
 
   const handleCardClick = (id: number) => {
     if (isAuthenticated) {

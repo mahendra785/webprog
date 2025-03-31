@@ -43,6 +43,10 @@ export function PartyWatchModal({
       setCopied(false);
     }
   }, [isOpen]);
+  if (typeof window !== "undefined") {
+    // Safe to use `window` here
+    console.log(window.innerWidth); // or other window-dependent code
+  }
 
   const handleCopyLink = () => {
     if (partyId) {
