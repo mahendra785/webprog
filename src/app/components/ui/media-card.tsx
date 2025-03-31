@@ -8,13 +8,7 @@ interface MediaCardProps {
   onClick: () => void;
 }
 
-export default function MediaCard({
-  id,
-  title,
-  image,
-  type,
-  onClick,
-}: MediaCardProps) {
+export default function MediaCard({ title, image, onClick }: MediaCardProps) {
   return (
     <div
       className="bg-gray-900 rounded-lg overflow-hidden shadow-lg hover:scale-105 transition-transform duration-300 cursor-pointer"
