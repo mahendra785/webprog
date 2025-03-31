@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb" // Change to "mysql" or "sqlite" if needed
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(uuid())  // Unique ID
+  name           String?   // Optional name
+  email          String    @unique // Unique email for login
+  emailVerified  DateTime? // Email verification timestamp
+  image          String?   // Profile picture URL
+  accounts       Account[] // Relation to accounts (for OAuth)
+  sessions       Session[] // Relation to sessions
+  createdAt      DateTime  @default(now()) // Auto timestamp
+  updatedAt      DateTime  @updatedAt
+}
+
+model Account {
+  id                String  @id @default(uuid())
+  userId            String
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String
+  provider          String
+  providerAccountId String  @unique // Google account ID
+  refresh_token     String? // OAuth refresh token
+  access_token      String? // OAuth access token
+  expires_at        Int?    // Expiry timestamp
+  token_type        String?
+  scope            String?
+  id_token         String?
+  session_state    String?
+}
+
+model Session {
+  id           String   @id @default(uuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}

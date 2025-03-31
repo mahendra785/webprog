@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { User } from "../page";
+import { User } from "@prisma/client";
 
 interface ProfileSectionProps {
   user: User | null;
