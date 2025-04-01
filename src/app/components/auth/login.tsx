@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface LoginSectionProps {
   login: (email: string) => void;
@@ -24,11 +23,77 @@ export default function LoginSection({
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Validation states
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+  const [isFormValid, setIsFormValid] = useState(false);
+
+  // Validate email using regex pattern
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    const isValid = emailRegex.test(email);
+
+    if (!email) {
+      setEmailError("Email is required");
+    } else if (!isValid) {
+      setEmailError("Please enter a valid email address");
+    } else {
+      setEmailError("");
+    }
+
+    return isValid && email !== "";
+  };
+
+  // Validate password with strong requirements
+  const validatePassword = (password: string): boolean => {
+    const hasMinLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
+
+    if (!password) {
+      setPasswordError("Password is required");
+    } else if (!hasMinLength) {
+      setPasswordError("Password must be at least 8 characters long");
+    } else if (!hasUppercase) {
+      setPasswordError("Password must include at least one uppercase letter");
+    } else if (!hasLowercase) {
+      setPasswordError("Password must include at least one lowercase letter");
+    } else if (!hasNumber) {
+      setPasswordError("Password must include at least one number");
+    } else if (!hasSpecialChar) {
+      setPasswordError("Password must include at least one special character");
+    } else {
+      setPasswordError("");
+    }
+
+    return (
+      hasMinLength &&
+      hasUppercase &&
+      hasLowercase &&
+      hasNumber &&
+      hasSpecialChar
+    );
+  };
+
+  // Check form validity whenever inputs change
+  useEffect(() => {
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    setIsFormValid(isEmailValid && isPasswordValid);
+  }, [email, password]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!email || !password) {
-      showToast("Error", "Please fill in all fields", "error");
+    // Validate form on submission
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
@@ -43,7 +108,7 @@ export default function LoginSection({
 
       showToast("Success", "You have successfully logged in", "success");
     } catch (error) {
-      showToast("Error", "Invalid email or password", error);
+      showToast("Error", "Invalid email or password", "error");
     } finally {
       setIsLoading(false);
     }
@@ -70,9 +135,18 @@ export default function LoginSection({
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                required
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                onBlur={() => validateEmail(email)}
+                aria-invalid={!!emailError}
+                aria-describedby="email-error"
+                className={`w-full px-3 py-2 bg-gray-800 border ${
+                  emailError ? "border-red-500" : "border-gray-700"
+                } rounded-md text-white`}
               />
+              {emailError && (
+                <p id="email-error" className="text-red-500 text-xs mt-1">
+                  {emailError}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -85,9 +159,18 @@ export default function LoginSection({
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white"
+                onBlur={() => validatePassword(password)}
+                aria-invalid={!!passwordError}
+                aria-describedby="password-error"
+                className={`w-full px-3 py-2 bg-gray-800 border ${
+                  passwordError ? "border-red-500" : "border-gray-700"
+                } rounded-md text-white`}
               />
+              {passwordError && (
+                <p id="password-error" className="text-red-500 text-xs mt-1">
+                  {passwordError}
+                </p>
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -106,9 +189,9 @@ export default function LoginSection({
             <button
               type="submit"
               className={`w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors ${
-                isLoading ? "opacity-70 cursor-not-allowed" : ""
+                isLoading || !isFormValid ? "opacity-70 cursor-not-allowed" : ""
               }`}
-              disabled={isLoading}
+              disabled={isLoading || !isFormValid}
             >
               {isLoading ? "Logging in..." : "Log In"}
             </button>
