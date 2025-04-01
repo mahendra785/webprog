@@ -4,17 +4,30 @@ import { useEffect, useRef, useState } from "react";
 import { socket } from "@/lib/socket";
 import ReactPlayer from "react-player";
 import { Slider } from "@/components/ui/slider";
-import { Play, Pause, Volume2, VolumeX } from "lucide-react";
+import {
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  SkipBack,
+  SkipForward,
+} from "lucide-react";
 
 interface YouTubePlayerProps {
   startTime?: number;
   className?: string;
+  videoId?: string;
 }
+
 export default function YouTubePlayer({
   startTime = 0,
   className,
+  videoId,
 }: YouTubePlayerProps) {
-  const videoId = "dQw4w9WgXcQ";
+  videoId =
+    typeof window !== "undefined"
+      ? window.location.pathname.split("/").pop() || "dQw4w9WgXcQ"
+      : "dQw4w9WgXcQ";
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -28,9 +41,13 @@ export default function YouTubePlayer({
   const [showControls, setShowControls] = useState(true);
   const roomId = `video_${videoId}`;
 
-  // Hardcoded video ID for testing
+  const seekAndMaybePlay = (time: number, shouldPlay: boolean) => {
+    if (!playerRef.current || !isReady) return;
+    playerRef.current.seekTo(time, "seconds");
+    setCurrentTime(time);
+    setIsPlaying(shouldPlay);
+  };
 
-  // Initialize Socket.IO connection
   useEffect(() => {
     function onConnect() {
       setIsConnected(true);
@@ -42,28 +59,23 @@ export default function YouTubePlayer({
     }
 
     function onPlay(time: number) {
-      if (!playerRef.current || !isReady || ignoreEvents) return;
-
+      if (!isReady) return;
       setIgnoreEvents(true);
-      playerRef.current.seekTo(time);
-      setIsPlaying(true);
+      seekAndMaybePlay(time, true);
       setTimeout(() => setIgnoreEvents(false), 500);
     }
 
     function onPause(time: number) {
-      if (!playerRef.current || !isReady || ignoreEvents) return;
-
+      if (!isReady) return;
       setIgnoreEvents(true);
-      playerRef.current.seekTo(time);
-      setIsPlaying(false);
+      seekAndMaybePlay(time, false);
       setTimeout(() => setIgnoreEvents(false), 500);
     }
 
     function onSeek(time: number) {
-      if (!playerRef.current || !isReady || ignoreEvents) return;
-
+      if (!isReady) return;
       setIgnoreEvents(true);
-      playerRef.current.seekTo(time);
+      seekAndMaybePlay(time, isPlaying);
       setTimeout(() => setIgnoreEvents(false), 500);
     }
 
@@ -83,22 +95,18 @@ export default function YouTubePlayer({
       socket.off("player:seek", onSeek);
       socket.disconnect();
     };
-  }, [isReady, ignoreEvents, roomId]);
+  }, [isReady, isPlaying, roomId]);
 
-  // Update current time periodically
   useEffect(() => {
-    if (!isPlaying || !isReady) return;
-
     const interval = setInterval(() => {
-      if (playerRef.current) {
-        setCurrentTime(playerRef.current.getCurrentTime());
+      if (playerRef.current && isReady) {
+        const current = playerRef.current.getCurrentTime();
+        setCurrentTime(current);
       }
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [isPlaying, isReady]);
+  }, [isReady]);
 
-  // Handle player state changes
   const handlePlay = () => {
     if (ignoreEvents) return;
     setIsPlaying(true);
@@ -113,8 +121,14 @@ export default function YouTubePlayer({
 
   const handleSeek = (seconds: number) => {
     if (ignoreEvents) return;
+    playerRef.current?.seekTo(seconds, "seconds");
     setCurrentTime(seconds);
     socket.emit("player:seek", seconds, roomId);
+  };
+
+  const skipSeconds = (offset: number) => {
+    const newTime = Math.max(0, Math.min(currentTime + offset, duration));
+    handleSeek(newTime);
   };
 
   const handleProgress = (state: { playedSeconds: number }) => {
@@ -123,38 +137,25 @@ export default function YouTubePlayer({
     }
   };
 
-  const handleDuration = (duration: number) => {
-    setDuration(duration);
-  };
-
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
-  // Controls visibility timeout
   useEffect(() => {
     let timeout: NodeJS.Timeout;
-
     const resetTimeout = () => {
       setShowControls(true);
       clearTimeout(timeout);
       timeout = setTimeout(() => setShowControls(false), 3000);
     };
-
     resetTimeout();
-
     const container = playerContainerRef.current;
-    if (container) {
-      container.addEventListener("mousemove", resetTimeout);
-    }
-
+    if (container) container.addEventListener("mousemove", resetTimeout);
     return () => {
       clearTimeout(timeout);
-      if (container) {
-        container.removeEventListener("mousemove", resetTimeout);
-      }
+      if (container) container.removeEventListener("mousemove", resetTimeout);
     };
   }, []);
 
@@ -162,7 +163,7 @@ export default function YouTubePlayer({
     <div className={`flex flex-col items-center ${className}`}>
       <div
         ref={playerContainerRef}
-        className="w-full aspect-video bg-black rounded-lg overflow-hidden relative group"
+        className="w-full aspect-video bg-black rounded-xl overflow-hidden relative group shadow-lg"
       >
         <ReactPlayer
           ref={playerRef}
@@ -173,15 +174,13 @@ export default function YouTubePlayer({
           volume={muted ? 0 : volume}
           onReady={() => {
             setIsReady(true);
-            if (startTime > 0) {
-              playerRef.current?.seekTo(startTime);
-            }
+            if (startTime > 0) playerRef.current?.seekTo(startTime);
           }}
           onPlay={handlePlay}
           onPause={handlePause}
           onSeek={handleSeek}
           onProgress={handleProgress}
-          onDuration={handleDuration}
+          onDuration={setDuration}
           onError={(error) => console.error("Player error:", error)}
           config={{
             youtube: {
@@ -194,13 +193,12 @@ export default function YouTubePlayer({
           }}
         />
 
-        {/* Custom Controls Overlay */}
+        {/* Media Controls */}
         <div
           className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 to-transparent p-4 transition-opacity duration-300 ${
             showControls ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         >
-          {/* Progress Bar */}
           <div className="mb-3">
             <Slider
               value={[currentTime]}
@@ -218,10 +216,15 @@ export default function YouTubePlayer({
 
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              {/* Play/Pause Button */}
+              <button
+                onClick={() => skipSeconds(-10)}
+                className="text-white hover:text-red-400"
+              >
+                <SkipBack className="w-5 h-5" />
+              </button>
               <button
                 onClick={() => (isPlaying ? handlePause() : handlePlay())}
-                className="text-white hover:text-red-500 transition-colors"
+                className="text-white hover:text-red-500"
               >
                 {isPlaying ? (
                   <Pause className="w-5 h-5" />
@@ -229,12 +232,17 @@ export default function YouTubePlayer({
                   <Play className="w-5 h-5" />
                 )}
               </button>
+              <button
+                onClick={() => skipSeconds(10)}
+                className="text-white hover:text-red-400"
+              >
+                <SkipForward className="w-5 h-5" />
+              </button>
 
-              {/* Volume Control */}
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => setMuted(!muted)}
-                  className="text-white hover:text-red-500 transition-colors"
+                  className="text-white hover:text-red-500"
                 >
                   {muted ? (
                     <VolumeX className="w-5 h-5" />
@@ -251,13 +259,11 @@ export default function YouTubePlayer({
                     setVolume(value);
                     if (value > 0 && muted) setMuted(false);
                   }}
-                  className="w-24 cursor-pointer"
+                  className="w-24"
                 />
               </div>
             </div>
-
-            {/* Connection Status */}
-            <div className="flex items-center space-x-2 text-sm text-white">
+            <div className="text-white text-sm flex items-center space-x-2">
               <div
                 className={`w-2 h-2 rounded-full ${
                   isConnected ? "bg-green-500" : "bg-red-500"
@@ -269,7 +275,6 @@ export default function YouTubePlayer({
           </div>
         </div>
 
-        {/* Big Play Button when paused */}
         {!isPlaying && (
           <button
             onClick={handlePlay}
@@ -279,7 +284,6 @@ export default function YouTubePlayer({
           </button>
         )}
       </div>
-
       <p className="text-sm text-gray-600 mt-4 text-center">
         Playback is synchronized across all viewers of this video.
       </p>
