@@ -30,6 +30,10 @@ export type ToastType = {
 
 // Main App Component
 export default function App() {
+  if (typeof window !== "undefined") {
+    // Safe to use `window` here
+    console.log(window.innerWidth); // or other window-dependent code
+  }
   // Authentication state
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -60,7 +64,6 @@ export default function App() {
   // Navigation function
   const navigateTo = (view: string) => {
     setCurrentView(view);
-    window.scrollTo(0, 0);
   };
 
   // Toast function

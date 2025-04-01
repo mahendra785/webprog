@@ -22,6 +22,10 @@ const AppStateContext = createContext<AppStateContextType | undefined>(
 
 // Provider component
 export function AppStateProvider({ children }: { children: ReactNode }) {
+  if (typeof window !== "undefined") {
+    // Safe to use `window` here
+    console.log(window.innerWidth); // or other window-dependent code
+  }
   const [currentView, setCurrentView] = useState<string>("home");
 
   // Function to navigate between views
