@@ -23,9 +23,10 @@ export default function HomePage({
       <div
         className="absolute inset-0 bg-cover bg-center z-0"
         style={{
-          backgroundImage: "url('/placeholder.svg?height=1080&width=1920')",
+          backgroundImage:
+            "url('https://source.unsplash.com/1920x1080/?cinema,film')",
           backgroundBlendMode: "overlay",
-          backgroundColor: "rgba(0,0,0,0.7)",
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
         }}
       />
 

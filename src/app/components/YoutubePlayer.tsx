@@ -9,12 +9,14 @@ import { Play, Pause, Volume2, VolumeX } from "lucide-react";
 interface YouTubePlayerProps {
   startTime?: number;
   className?: string;
+  videoId?: string;
 }
 export default function YouTubePlayer({
   startTime = 0,
   className,
+  videoId,
 }: YouTubePlayerProps) {
-  const videoId = "dQw4w9WgXcQ";
+  videoId = window.location.pathname.split("/").pop() || "dQw4w9WgXcQ"; // Default video ID for testing
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const [isConnected, setIsConnected] = useState(false);

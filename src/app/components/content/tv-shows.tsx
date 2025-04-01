@@ -5,78 +5,81 @@ import MediaCard from "../../components/ui/media-card";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import ReactMarkdown from "react-markdown";
 
-// Sample TV shows data
+// Updated TV shows data with YouTube trailer video IDs as IDs and correct titles
 const TV_SHOWS_DATA = [
   {
-    id: 1,
+    id: "b9EkMc79ZSU",
     title: "Stranger Things",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/x2LSRK2Cm7MZhjluni1msVJ3wDF.jpg",
     genre: "sci-fi",
   },
   {
-    id: 2,
+    id: "lrcqbavlbyQ",
     title: "Breaking Bad",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/ggFHVNu6YYI5L9pCfOacjizRGt.jpg",
     genre: "drama",
   },
   {
-    id: 3,
+    id: "JWtnJjn6ng0",
     title: "The Crown",
-    image: "/placeholder.svg?height=400&width=300",
+    image:
+      "https://th.bing.com/th/id/OIP.3HtpukMKmR3Rg6Z_zYW7ZQHaJQ?w=128&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7",
     genre: "drama",
   },
   {
-    id: 4,
+    id: "rlR4PJn8b8I",
     title: "Game of Thrones",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/u3bZgnGQ9T01sWNhyveQz0wH0Hl.jpg",
     genre: "fantasy",
   },
   {
-    id: 5,
+    id: "a0x7z_t7Ves",
     title: "The Mandalorian",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/sWgBv7LV2PRoQgkxwlibdGXKz1S.jpg",
     genre: "sci-fi",
   },
   {
-    id: 6,
+    id: "_InqQJRqGW4",
     title: "Money Heist",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/reEMJA1uzscCbkpeRJeTT2bjqUp.jpg",
     genre: "action",
   },
   {
-    id: 7,
+    id: "hDNNmeeJs1Q",
     title: "Friends",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/f496cm9enuEsZkSPzCwnTESEK5s.jpg",
     genre: "comedy",
   },
   {
-    id: 8,
+    id: "Vmb1tqYqyII",
     title: "The Office",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/qWnJzyZhyy74gjpSjIXWmuk0ifX.jpg",
     genre: "comedy",
   },
   {
-    id: 9,
+    id: "oqxAJKy0ii4",
     title: "Squid Game",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/dDlEmu3EZ0Pgg93K2SVNLCjCSvE.jpg",
     genre: "thriller",
   },
   {
-    id: 10,
+    id: "ndl1W4ltcmg",
     title: "The Witcher",
-    image: "/placeholder.svg?height=400&width=300",
+    image:
+      "https://th.bing.com/th/id/OIP.5GXMWzjvja13qo-QnUkzHwHaK-?w=115&h=180&c=7&r=0&o=5&dpr=1.5&pid=1.7",
     genre: "fantasy",
   },
   {
-    id: 11,
+    id: "oVzVdvGIC7U",
     title: "Peaky Blinders",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/bGZn5RVzMMXju4ev7xbl1aLdXqq.jpg",
     genre: "drama",
   },
   {
-    id: 12,
+    id: "rrho2oNxwcg",
     title: "Dark",
-    image: "/placeholder.svg?height=400&width=300",
+    image:
+      "https://upload.wikimedia.org/wikipedia/en/d/da/DarkNetflixPosterEnglish.jpg",
     genre: "sci-fi",
   },
 ];
@@ -127,8 +130,10 @@ export default function TVShowsSection({
     setFilteredShows(result);
   }, [searchTerm, selectedGenre]);
 
-  const handleCardClick = (id: number) => {
+  const handleCardClick = (id: string) => {
     if (isAuthenticated) {
+      // In your real app, you might want to navigate or push to a route
+      // like: navigateTo("party", { id, type: "tvshow" });
       window.location.href = `/party/${id}`;
     } else {
       navigateTo("login");
@@ -279,6 +284,7 @@ export default function TVShowsSection({
                   </div>
                 </div>
               ))}
+
               {isLoading && (
                 <div className="text-left mb-4">
                   <div className="inline-block px-4 py-2 rounded-lg bg-gray-800 text-gray-200">

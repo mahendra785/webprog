@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import Navbar from "./components/navbar";
 import HomePage from "./components/home";
@@ -32,8 +31,9 @@ export type ToastType = {
 export default function App() {
   if (typeof window !== "undefined") {
     // Safe to use `window` here
-    console.log(window.innerWidth); // or other window-dependent code
+    console.log(window.innerWidth);
   }
+
   // Authentication state
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -41,23 +41,26 @@ export default function App() {
   // Navigation state
   const [currentView, setCurrentView] = useState("home");
 
-  // Toast notifications
+  // Toast notifications state
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
-  // Auth functions
+  // Auth functions with toast feedback
   const login = (email: string, name = "User") => {
     setUser({ email, name });
     setIsAuthenticated(true);
+    showToast("Login Successful", `Welcome, ${name}!`, "success");
   };
 
   const logout = () => {
     setUser(null);
     setIsAuthenticated(false);
+    showToast("Logged Out", "You have been logged out.", "info");
   };
 
   const updateUser = (userData: Partial<User>) => {
     if (user) {
       setUser({ ...user, ...userData });
+      showToast("Profile Updated", "Your profile has been updated.", "success");
     }
   };
 
@@ -75,7 +78,7 @@ export default function App() {
     const id = Date.now().toString();
     setToasts((prev) => [...prev, { id, title, message, type }]);
 
-    // Auto-remove toast after 5 seconds
+    // Auto-remove toast after 5 seconds for a smoother UX
     setTimeout(() => {
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 5000);
@@ -85,7 +88,7 @@ export default function App() {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   };
 
-  // Render the appropriate component based on the current view state
+  // Render content based on current view with smooth transitions (to be defined in CSS)
   const renderContent = () => {
     switch (currentView) {
       case "login":
@@ -137,14 +140,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-white">
+    <div className="min-h-screen  bg-gradient-to-b from-gray-900 to-black text-white flex flex-col">
+      {/* Navigation */}
       <Navbar
         isAuthenticated={isAuthenticated}
         logout={logout}
         navigateTo={navigateTo}
       />
-      <main className="pt-16">{renderContent()}</main>
+      {/* Main content area */}
 
+      <main className="pt-16">{renderContent()}</main>
       {/* Toast notifications */}
       <ToastContainer>
         {toasts.map((toast) => (

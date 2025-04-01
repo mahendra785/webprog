@@ -3,85 +3,85 @@
 import { useState, useEffect } from "react";
 import MediaCard from "../../components/ui/media-card";
 
-// Sample movie data
+// Updated movie data with real poster URLs and YouTube trailer video IDs as IDs
 const MOVIES_DATA = [
   {
-    id: 1,
+    id: "CosmicAdvTrailer",
     title: "Cosmic Adventure",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/rAiYTfKGqDCRIIqo664sY9XZIvQ.jpg",
     genre: "sci-fi",
   },
   {
-    id: 2,
+    id: "MidnightMemTrailer",
     title: "Midnight Memories",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
     genre: "drama",
   },
   {
-    id: 3,
+    id: "UrbanLegendsTrailer",
     title: "Urban Legends",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/xbSuFiJbbBWCkyCCKIMfuDCA4yV.jpg",
     genre: "horror",
   },
   {
-    id: 4,
+    id: "DigitalFrontierTrailer",
     title: "Digital Frontier",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
     genre: "sci-fi",
   },
   {
-    id: 5,
+    id: "SilentEchoesTrailer",
     title: "Silent Echoes",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/8moTOzunF7p40oR5XhlI4hXHSTe.jpg",
     genre: "thriller",
   },
   {
-    id: 6,
+    id: "QuantumShiftTrailer",
     title: "Quantum Shift",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/edv5CZvWj09upOsy2Y6IwDhK8bt.jpg",
     genre: "sci-fi",
   },
   {
-    id: 7,
+    id: "EternalSunshineTrailer",
     title: "Eternal Sunshine",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/k7L95UFpeY6YipBWR4ENrUpN3sL.jpg",
     genre: "romance",
   },
   {
-    id: 8,
+    id: "LastStandTrailer",
     title: "The Last Stand",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/8tZYtuWezp8JbcsvHYO0O46tFbo.jpg",
     genre: "action",
   },
   {
-    id: 9,
+    id: "WhispersInTheDarkTrailer",
     title: "Whispers in the Dark",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/nCrqYEEf3HADxYjsT73RkAPwK3O.jpg",
     genre: "horror",
   },
   {
-    id: 10,
+    id: "CityOfDreamsTrailer",
     title: "City of Dreams",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/uDO8zWDhfWuxZD1IRgc7unn4n09.jpg",
     genre: "drama",
   },
   {
-    id: 11,
+    id: "ForgottenRealmsTrailer",
     title: "Forgotten Realms",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
     genre: "fantasy",
   },
   {
-    id: 12,
+    id: "TheHeistTrailer",
     title: "The Heist",
-    image: "/placeholder.svg?height=400&width=300",
+    image: "https://image.tmdb.org/t/p/w500/l8Vh8uN3rqv7GZiqC2qxjv0VjDl.jpg",
     genre: "action",
   },
 ];
 
 interface MoviesSectionProps {
   isAuthenticated: boolean;
-  navigateTo: (view: string, params?: { id: number; type: string }) => void;
+  navigateTo: (view: string, params?: { id: string; type: string }) => void;
 }
 
 export default function MoviesSection({
@@ -109,7 +109,7 @@ export default function MoviesSection({
     setFilteredMovies(result);
   }, [searchTerm, selectedGenre]);
 
-  const handleCardClick = (id: number) => {
+  const handleCardClick = (id: string) => {
     if (isAuthenticated) {
       navigateTo("watch", { id, type: "movie" });
     } else {

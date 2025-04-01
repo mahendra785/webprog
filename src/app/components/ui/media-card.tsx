@@ -1,7 +1,7 @@
 "use client";
 
 interface MediaCardProps {
-  id: number;
+  id: string;
   title: string;
   image: string;
   type: "movie" | "tvshow";
