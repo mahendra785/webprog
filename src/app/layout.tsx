@@ -22,6 +22,10 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  if (typeof window !== "undefined") {
+    // Safe to use `window` here
+    console.log(window.innerWidth); // or other window-dependent code
+  }
   return (
     <html lang="en">
       <body
